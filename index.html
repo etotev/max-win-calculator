@@ -3,5 +3,151 @@
 <head>
   <meta charset="UTF-8" />
   <title>Max Win Calculator</title>
-  ...
+  <style>
+    body { font-family: sans-serif; margin: 20px; max-width: 400px; }
+    label { font-weight: bold; display: inline-block; width: 150px; margin-bottom: 5px; }
+    .row { margin: 8px 0; display: flex; align-items: center; }
+    input[type="number"] { padding: 5px; width: 200px; }
+    select { padding: 5px; }
+    select.currency-narrow { width: auto; margin-left: 8px; }
+    input[readonly] { background: #f9f9f9; border: 1px solid #ccc; padding: 5px; width: 200px; }
+    .ok { color: green; font-weight: bold; }
+    .not-ok { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h2>Max Win Calculator</h2>
+
+  <div class="row">
+    <label for="maxCoef">Max Coef:</label>
+    <select id="maxCoef">
+      <option value="10000">10000</option>
+      <option value="7777">7777</option>
+      <option value="1000">1000</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="betValue">Bet Unit Value:</label>
+    <input id="betValue" type="number" value="1" min="0" step="any">
+  </div>
+
+  <div class="row">
+    <label for="maxMult">Max Multiplier:</label>
+    <input id="maxMult" type="number" value="1" min="0" step="any">
+  </div>
+
+  <div class="row">
+    <label for="winCurrency">Currency:</label>
+    <select id="winCurrency"></select>
+  </div>
+
+  <div class="row">
+    <label for="maxWin">Max Win:</label>
+    <input id="maxWin" type="text" readonly>
+  </div>
+
+  <div class="row">
+    <label for="maxWinEur">Max Win in EUR:</label>
+    <input id="maxWinEur" type="text" readonly>
+  </div>
+
+  <div class="row">
+    <label for="exposure">Max Exposure:</label>
+    <input id="exposure" type="number" value="10000" min="0" step="any">
+    <select id="expCurrency" class="currency-narrow"></select>
+  </div>
+
+  <div class="row">
+    <label for="expEur">Max Exposure in EUR:</label>
+    <input id="expEur" type="text" readonly>
+  </div>
+
+  <div class="row">
+    <label>Result:</label>
+    <span id="comparisonResult" class="ok">OK</span>
+  </div>
+
+  <script>
+    const currencies = ["AOA","CLP","MWK","VND","UZS","SLL","KHR","MNT","MGA","CDF","KRW","XOF","XAF","RWF","KZT","CRC","GYD","AMD","RUB","RSD","LRD","LKR","KES","HTG","BDT","PHP","NPR","MZN","MUR","KGS","INR","EGP","TWD","TRY","THB","ZMW","UAH","MXN","HNL","TJS","NAD","MDL","GTQ","CNY","MAD","RON","BRL","TMT","PEN","NZD","BND","BGN","AZN","USD","GBP","EUR","EGT","PLN","TTD","BYN","CAD","NOK","ZAR","JPY","SLE","COP","GHS","HKD","MYR","MMK","IDR","LAK","BTN","PKR","ARS","BBD","NGN","BWP","ETB","PYG","BOB","UGX","TND","TZS","VES","MKD"];
+
+    const maxCoefSelect = document.getElementById('maxCoef');
+    const betInput = document.getElementById('betValue');
+    const multInput = document.getElementById('maxMult');
+    const winCurrencySelect = document.getElementById('winCurrency');
+    const maxWinOutput = document.getElementById('maxWin');
+    const maxWinEurOutput = document.getElementById('maxWinEur');
+    const exposureInput = document.getElementById('exposure');
+    const expCurrencySelect = document.getElementById('expCurrency');
+    const expEurOutput = document.getElementById('expEur');
+    const resultSpan = document.getElementById('comparisonResult');
+
+    currencies.forEach(cur => {
+      winCurrencySelect.innerHTML += `<option value="${cur}">${cur}</option>`;
+      expCurrencySelect.innerHTML += `<option value="${cur}">${cur}</option>`;
+    });
+
+    winCurrencySelect.value = "EUR";
+    expCurrencySelect.value = "EUR";
+
+    async function fetchRate(from, to) {
+      if (from === to) return 1;
+      const url = `https://open.er-api.com/v6/latest/${from}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const rate = data?.rates?.[to];
+        return typeof rate === 'number' && !isNaN(rate) ? rate : NaN;
+      } catch (e) {
+        console.error(`Error fetching rate from ${from} to ${to}:`, e);
+        return NaN;
+      }
+    }
+
+    async function updateCalculations() {
+      const maxCoef = parseFloat(maxCoefSelect.value) || 0;
+      const betValue = parseFloat(betInput.value) || 0;
+      const maxMult = parseFloat(multInput.value) || 0;
+      const exposureValue = parseFloat(exposureInput.value) || 0;
+      const winCurr = winCurrencySelect.value;
+      const expCurr = expCurrencySelect.value;
+
+      const maxWin = maxCoef * betValue * maxMult;
+      maxWinOutput.value = `${maxWin.toFixed(2)} ${winCurr}`;
+
+      const [winRate, expRate] = await Promise.all([
+        fetchRate(winCurr, 'EUR'),
+        fetchRate(expCurr, 'EUR')
+      ]);
+
+      const maxWinEUR = !isNaN(winRate) ? maxWin * winRate : NaN;
+      const expEUR = !isNaN(expRate) ? exposureValue * expRate : NaN;
+
+      maxWinEurOutput.value = isNaN(maxWinEUR) ? 'Rate Error' : `${maxWinEUR.toFixed(2)} EUR`;
+      expEurOutput.value = isNaN(expEUR) ? 'Rate Error' : `${expEUR.toFixed(2)} EUR`;
+
+      if (isNaN(maxWinEUR) || isNaN(expEUR)) {
+        resultSpan.textContent = 'Rate Error';
+        resultSpan.className = 'not-ok';
+        return;
+      }
+
+      if (expEUR > maxWinEUR && expEUR > 0) {
+        resultSpan.textContent = 'OK';
+        resultSpan.className = 'ok';
+      } else {
+        resultSpan.textContent = 'NOT OK';
+        resultSpan.className = 'not-ok';
+      }
+    }
+
+    [maxCoefSelect, betInput, multInput, winCurrencySelect, exposureInput, expCurrencySelect].forEach(el => {
+      el.addEventListener('input', updateCalculations);
+      el.addEventListener('change', updateCalculations);
+    });
+
+    updateCalculations();
+  </script>
+</body>
 </html>
