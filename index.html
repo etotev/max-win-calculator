@@ -21,11 +21,7 @@
 
   <div class="row">
     <label for="maxCoef">Max Coef:</label>
-    <select id="maxCoef">
-      <option value="10000">10000</option>
-      <option value="7777">7777</option>
-      <option value="1000">1000</option>
-    </select>
+    <input id="maxCoef" type="number" value="10000" min="0" step="any">
   </div>
 
   <div class="row">
@@ -70,7 +66,9 @@
   </div>
 
   <script>
-    const currencies = ["AOA","CLP","MWK","VND","UZS","SLL","KHR","MNT","MGA","CDF","KRW","XOF","XAF","RWF","KZT","CRC","GYD","AMD","RUB","RSD","LRD","LKR","KES","HTG","BDT","PHP","NPR","MZN","MUR","KGS","INR","EGP","TWD","TRY","THB","ZMW","UAH","MXN","HNL","TJS","NAD","MDL","GTQ","CNY","MAD","RON","BRL","TMT","PEN","NZD","BND","BGN","AZN","USD","GBP","EUR","EGT","PLN","TTD","BYN","CAD","NOK","ZAR","JPY","SLE","COP","GHS","HKD","MYR","MMK","IDR","LAK","BTN","PKR","ARS","BBD","NGN","BWP","ETB","PYG","BOB","UGX","TND","TZS","VES","MKD"];
+    let currencies = ["AOA","CLP","MWK","VND","UZS","SLL","KHR","MNT","MGA","CDF","KRW","XOF","XAF","RWF","KZT","CRC","GYD","AMD","RUB","RSD","LRD","LKR","KES","HTG","BDT","PHP","NPR","MZN","MUR","KGS","INR","EGP","TWD","TRY","THB","ZMW","UAH","MXN","HNL","TJS","NAD","MDL","GTQ","CNY","MAD","RON","BRL","TMT","PEN","NZD","BND","BGN","AZN","USD","GBP","EUR","EGT","PLN","TTD","BYN","CAD","NOK","ZAR","JPY","SLE","COP","GHS","HKD","MYR","MMK","IDR","LAK","BTN","PKR","ARS","BBD","NGN","BWP","ETB","PYG","BOB","UGX","TND","TZS","VES","MKD"];
+
+    currencies = currencies.sort();
 
     const maxCoefSelect = document.getElementById('maxCoef');
     const betInput = document.getElementById('betValue');
